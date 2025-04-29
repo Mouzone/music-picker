@@ -4,7 +4,7 @@ import sqlite3
 def csv_to_sqlite(csv_filepath, sqlite_filepath, table_name, column_types):
     """
     Imports data from a CSV file into an SQLite database table with specified column types,
-    including an auto-incrementing ID.
+    including an auto-incrementing ID, and converts "Yes"/"No" to boolean for "Explicit".
 
     Args:
         csv_filepath (str): The path to the CSV file.
@@ -29,16 +29,28 @@ def csv_to_sqlite(csv_filepath, sqlite_filepath, table_name, column_types):
             create_table_query = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(columns_definition)})'
             cursor.execute(create_table_query)
 
-            # Construct the INSERT INTO statement (only for the columns from the CSV, excluding 'id')
+            # Construct the INSERT INTO statement (only for the columns from the CSV)
             placeholders = ', '.join('?' * len(header))
             insert_query = f'INSERT INTO "{table_name}" ({", ".join(f'"{col.strip()}"' for col in header)}) VALUES ({placeholders})'
 
-            # Insert data rows
+            # Insert data rows, converting "Explicit" to boolean
             for row in csv_reader:
-                cursor.execute(insert_query, row)
+                # Convert 'Yes'/'No' to True/False for the 'Explicit' column
+                modified_row = []
+                for i, value in enumerate(row):
+                    if header[i].strip() == 'Explicit':
+                        if value.lower() == 'yes':
+                            modified_row.append(True)
+                        elif value.lower() == 'no':
+                            modified_row.append(False)
+                        else:
+                            modified_row.append(value)  # Keep original if not 'Yes' or 'No'
+                    else:
+                        modified_row.append(value)
+                cursor.execute(insert_query, modified_row)
 
             conn.commit()
-            print(f"Successfully imported '{csv_filepath}' to table '{table_name}' in '{sqlite_filepath}' with an auto-incrementing ID.")
+            print(f"Successfully imported '{csv_filepath}' to table '{table_name}' in '{sqlite_filepath}' with an auto-incrementing ID, converting 'Explicit' to boolean.")
 
     except FileNotFoundError:
         print(f"Error: CSV file not found at '{csv_filepath}'.")
@@ -66,7 +78,8 @@ if __name__ == '__main__':
         'Speechiness': "INTEGER",
         'Liveness': "INTEGER",
         'Acousticness': "INTEGER",
-        'Instrumentalness': "INTEGER"
+        'Instrumentalness': "INTEGER",
+        'Explicit': 'INTEGER'  # Store boolean as INTEGER (1 for True, 0 for False)
     }
 
     csv_to_sqlite(csv_file, db_file, table, column_types_mapping)
