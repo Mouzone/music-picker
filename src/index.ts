@@ -1,10 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Database } from "sqlite3";
+import sqlite3 from "sqlite3";
 import { promisify } from "util";
 import { z } from "zod";
-
-const USER_AGENT = "dj/1.0";
 
 // Create server instance
 const server = new McpServer({
@@ -17,7 +15,7 @@ const server = new McpServer({
 });
 
 const getDb = () => {
-    const db = new Database("database.db");
+    const db = new sqlite3.Database("database.db");
     return {
         all: promisify<string, any[]>(db.all.bind(db)),
         close: promisify(db.close.bind(db)),
