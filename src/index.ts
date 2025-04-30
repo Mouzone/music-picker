@@ -15,7 +15,9 @@ const server = new McpServer({
 });
 
 const getDb = () => {
-    const db = new sqlite3.Database("database.db");
+    const db = new sqlite3.Database(
+        "/Users/sunnyliu/Repos/music-picker/database.db"
+    );
     return {
         all: promisify<string, any[]>(db.all.bind(db)),
         close: promisify(db.close.bind(db)),
